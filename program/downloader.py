@@ -26,7 +26,6 @@ from driver.filters import command, other_filters
 
 
 @Client.on_message(command(["lyric", f"lyric@{bn}", "lyrics", f"lyrics@{bn}"]))
-@check_blacklist()
 async def get_lyric_genius(_, message: Message):
     if len(message.command) < 2:
         return await message.reply_text("**usage:**\n\n/lyrics (song name)")
