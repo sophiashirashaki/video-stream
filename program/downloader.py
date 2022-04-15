@@ -25,18 +25,34 @@ from driver.decorators import humanbytes
 from driver.filters import command, other_filters
 
 
-@Client.on_message(command(["lyric", f"lyric@{bn}"]))
-async def lyrics(_, message):
-    try:
-        if len(message.command) < 2:
-            await message.reply_text("» **give a lyric name too.**")
-            return
-        query = message.text.split(None, 1)[1]
-        rep = await message.reply_text("🔎 **searching lyrics...**")
-        resp = requests.get(
-            f"https://api-tede.herokuapp.com/api/lirik?l={query}"
-        ).json()
-        result = f"{resp['data']}"
-        await rep.edit(result)
-    except Exception:
-        await rep.edit("❌ **results of lyric not found.**\n\n» **please give a valid song name.**")
+@Client.on_message(command(["lyric", f"lyric@{bn}", "lyrics", f"lyrics@{bn}"]))
+@check_blacklist()
+async def get_lyric_genius(_, message: Message):
+    if len(message.command) < 2:
+        return await message.reply_text("**usage:**\n\n/lyrics (song name)")
+    m = await message.reply_text("🔍 Searching lyrics...")
+    query = message.text.split(None, 1)[1]
+    api = "OXaVabSRKQLqwpiYOn-E4Y7k3wj-TNdL5RfDPXlnXhCErbcqVvdCF-WnMR5TBctI"
+    data = lyricsgenius.Genius(api)
+    data.verbose = False
+    result = data.search_song(query, get_full_info=False)
+    if result is None:
+        return await m.edit("❌ `404` lyrics not found")
+    xxx = f"""
+**Title song:** {query}
+**Artist name:** {result.artist}
+**Lyrics:**
+{result.lyrics}"""
+    if len(xxx) > 4096:
+        await m.delete()
+        filename = "lyrics.txt"
+        with open(filename, "w+", encoding="utf8") as out_file:
+            out_file.write(str(xxx.strip()))
+        await message.reply_document(
+            document=filename,
+            caption=f"**OUTPUT:**\n\n`attached lyrics text`",
+            quote=False,
+        )
+        remove_if_exists(filename)
+    else:
+        await m.edit(xxx)
